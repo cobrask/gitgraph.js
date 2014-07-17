@@ -629,6 +629,18 @@
     this.parentCommit = options.parentCommit;
     this.x = options.x;
     this.y = options.y;
+	
+	if(typeof options.tag === "object")
+	{
+		this.tag = 
+		{
+			message : options.tag.message,
+			messageColor : options.tag.messageColor ||  this.template.tag.message.color,
+			messageFillColor: options.tag.messageFillColor || this.template.tag.message.fillColor,
+			spaceX: options.tag.spaceX || this.template.tag.spaceX,
+			display: options.tag.display || this.template.tag.display
+		};
+	}
 
     this.parent.commits.push(this);
   }
@@ -666,14 +678,81 @@
     }
         
     // Message
+    var messageTextSize = null;
     if (this.messageDisplay) {
       var message = this.sha1 + " " + this.message + (this.author ? " - " + this.author : "");
       this.context.font = this.template.commit.message.font;
       this.context.fillStyle = this.messageColor;
+	  messageTextSize = this.context.measureText(message);
       this.context.fillText(message, (this.parent.columnMax + 1) * this.template.branch.spacingX, this.y + 3);
     }
+    
+    if(typeof this.tag === "object" && this.tag.display)
+	{
+		var message = this.tag.message;
+		this.context.font = this.template.commit.message.font;
+		
+		var tagTextSize = this.context.measureText(message);
+		var offset = (messageTextSize === null ? 0 : messageTextSize.width) + this.tag.spaceX;
+		
+		this.context.fillStyle = this.tag.messageFillColor;
+		this.roundRect(
+			(this.parent.columnMax + 1) * this.template.branch.spacingX + offset, 
+			this.y - 0.5 * this.template.tag.boxHeight - this.template.tag.message.padding - 1, 
+			tagTextSize.width + (2 * this.template.tag.message.padding), 
+			this.template.tag.boxHeight + (2 * this.template.tag.message.padding),
+			5,
+			true,
+			false
+		);
+		this.context.fillStyle = this.tag.messageColor;
+		this.context.fillText(message, (this.parent.columnMax + 1) * this.template.branch.spacingX + offset + this.template.tag.message.padding, this.y + 3);
+	}
+	
+	
   };
 
+  /**
+   * Draws a rounded rectangle using the current state of the canvas. 
+   * If you omit the last three params, it will draw a rectangle 
+   * outline with a 5 pixel border radius 
+   * @param {Number} x The top left x coordinate
+   * @param {Number} y The top left y coordinate 
+   * @param {Number} width The width of the rectangle 
+   * @param {Number} height The height of the rectangle
+   * @param {Number} radius The corner radius. Defaults to 5;
+   * @param {Boolean} fill Whether to fill the rectangle. Defaults to false.
+   * @param {Boolean} stroke Whether to stroke the rectangle. Defaults to true.
+   */  
+  Commit.prototype.roundRect = function(x, y, width, height, radius, fill, stroke) {
+	  var ctx = this.context;
+	  if (typeof stroke == "undefined" ) {
+		  stroke = true;
+	  }
+	  if (typeof radius === "undefined") {
+		  radius = 5;
+	  }
+	  ctx.beginPath();
+	  ctx.moveTo(x + radius, y);
+	  ctx.lineTo(x + width - radius, y);
+	  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+	  ctx.lineTo(x + width, y + height - radius);
+	  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+	  ctx.lineTo(x + radius, y + height);
+	  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+	  ctx.lineTo(x, y + radius);
+	  ctx.quadraticCurveTo(x, y, x + radius, y);
+	  ctx.closePath();
+	  if (fill) {
+		  ctx.fill();
+	  }        
+	  
+	  if (stroke) {
+		  ctx.stroke();
+	  }
+  };
+  
+  
   /**
    * Render a arrow before commit
    *
@@ -725,7 +804,7 @@
     this.context.lineTo(x4, y4); // Bottom right
     this.context.fill();
   };
-
+  
 
   // --------------------------------------------------------------------
   // -----------------------      Template       ------------------------
@@ -765,6 +844,8 @@
     options.branch = options.branch || {};
     options.arrow = options.arrow || {};
     options.commit = options.commit || {};
+	options.tag = options.tag || {};
+	options.tag.message = options.tag.message || {};
     options.commit.dot = options.commit.dot || {};
     options.commit.message = options.commit.message || {};
 
@@ -812,6 +893,15 @@
     // Only one color, if null message takes commit color (only message)
     this.commit.message.color = options.commit.message.color || null;
     this.commit.message.font = options.commit.message.font || "normal 12pt Calibri";
+	
+	this.tag = {};
+	this.tag.display = (typeof options.tag.display === "boolean") ? options.tag.display : true;
+	this.tag.boxHeight = (typeof options.tag.boxHeight === "number") ? options.tag.boxHeight : 10;
+	this.tag.message = {};
+	this.tag.message.color = options.tag.message.color || null;
+	this.tag.message.fillColor = options.tag.message.fillColor || null;
+	this.tag.message.padding = (typeof options.tag.message.padding === "number") ? options.tag.message.padding : 5;
+	this.tag.spaceX = (typeof options.tag.spaceX === "number") ? options.tag.spaceX : 5;
   }
 
   /**
@@ -842,6 +932,14 @@
             color: "black"
           }
         },
+		tag : {
+			display: true,
+			boxHeight: 10,
+			message: {
+				color: "black",
+				fillColor: "gray"
+			}
+		},
         arrow: {
           size: 16,
           offset: 2.5
@@ -863,7 +961,15 @@
           message: {
             font: "normal 14pt Arial",
           }
-        }
+        },
+		tag : {
+			display: true,
+			boxHeight: 20,
+			message: {
+				color: "white",
+				padding: 5
+			}
+		}
       });
     }
   };
