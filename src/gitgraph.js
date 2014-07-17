@@ -835,6 +835,12 @@
    * @param {String} [options.commit.message.color] - Commit message color
    * @param {Boolean} [options.commit.message.display] - Commit display policy
    * @param {String} [options.commit.message.font = "normal 12pt Calibri"] - Commit message font
+   * @param {Boolean} [options.tag.display] - Commit tag display policy
+   * @param {Number} [options.tag.spaceX] - Spacing between commit message and tag badge
+   * @param {String} [options.tag.message.color] - Commit message color
+   * @param {String} [options.tag.message.fillColor] - Commit badge fill color
+   * @param {Number} [options.tag.message.padding] - Commit badge padding
+   * 
    *
    * @this Template
    **/
