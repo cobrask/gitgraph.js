@@ -630,16 +630,34 @@
     this.x = options.x;
     this.y = options.y;
 	
+	this.tag = [];
 	if(typeof options.tag === "object")
 	{
-		this.tag = 
+		if(Array.isArray(options.tag))
 		{
-			message : options.tag.message,
-			messageColor : options.tag.messageColor ||  this.template.tag.message.color,
-			messageFillColor: options.tag.messageFillColor || this.template.tag.message.fillColor,
-			spaceX: options.tag.spaceX || this.template.tag.spaceX,
-			display: options.tag.display || this.template.tag.display
-		};
+			for(var i = 0; i < options.tag.length; i++)
+			{
+				var ctag = options.tag[i];
+				this.tag.push({
+					message : ctag.message,
+				  messageColor : ctag.messageColor ||  this.template.tag.message.color,
+				  messageFillColor: ctag.messageFillColor || this.template.tag.message.fillColor,
+				  spaceX: ctag.spaceX || this.template.tag.spaceX,
+				  display: ctag.display || this.template.tag.display
+				});
+			}
+		}
+		else
+		{
+			this.tag.push({
+				message : options.tag.message,
+				messageColor : options.tag.messageColor ||  this.template.tag.message.color,
+				messageFillColor: options.tag.messageFillColor || this.template.tag.message.fillColor,
+				spaceX: options.tag.spaceX || this.template.tag.spaceX,
+				display: options.tag.display || this.template.tag.display
+			});
+		}
+		
 	}
 
     this.parent.commits.push(this);
@@ -687,26 +705,34 @@
       this.context.fillText(message, (this.parent.columnMax + 1) * this.template.branch.spacingX, this.y + 3);
     }
     
-    if(typeof this.tag === "object" && this.tag.display)
+    var offset = (messageTextSize === null ? 0 : messageTextSize.width);
+	var originalFill = this.context.fillStyle;
+    for(var i = 0; i < this.tag.length; i++)
 	{
-		var message = this.tag.message;
-		this.context.font = this.template.commit.message.font;
-		
-		var tagTextSize = this.context.measureText(message);
-		var offset = (messageTextSize === null ? 0 : messageTextSize.width) + this.tag.spaceX;
-		
-		this.context.fillStyle = this.tag.messageFillColor;
-		this.roundRect(
-			(this.parent.columnMax + 1) * this.template.branch.spacingX + offset, 
-			this.y - 0.5 * this.template.tag.boxHeight - this.template.tag.message.padding - 1, 
-			tagTextSize.width + (2 * this.template.tag.message.padding), 
-			this.template.tag.boxHeight + (2 * this.template.tag.message.padding),
-			5,
-			true,
-			false
-		);
-		this.context.fillStyle = this.tag.messageColor;
-		this.context.fillText(message, (this.parent.columnMax + 1) * this.template.branch.spacingX + offset + this.template.tag.message.padding, this.y + 3);
+		var tag = this.tag[i];
+		var offset = offset + tag.spaceX;
+		if(tag.display)
+		{
+			var message = tag.message;
+			this.context.font = this.template.commit.message.font;
+			
+			var tagTextSize = this.context.measureText(message);
+			
+			
+			this.context.fillStyle = tag.messageFillColor || originalFill;
+			this.roundRect(
+				(this.parent.columnMax + 1) * this.template.branch.spacingX + offset, 
+				this.y - 0.5 * this.template.tag.boxHeight - this.template.tag.message.padding - 1, 
+				tagTextSize.width + (2 * this.template.tag.message.padding), 
+				this.template.tag.boxHeight + (2 * this.template.tag.message.padding),
+				5,
+				true,
+				false
+			);
+			this.context.fillStyle = tag.messageColor;
+			this.context.fillText(message, (this.parent.columnMax + 1) * this.template.branch.spacingX + offset + this.template.tag.message.padding, this.y + 3);
+			offset += tagTextSize.width + 2 * this.template.tag.message.padding;
+		}
 	}
 	
 	
